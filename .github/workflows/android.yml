@@ -19,14 +19,14 @@ jobs:
 
       - name: Install Buildozer & Core Packages
         run: |
-          pip install --upgrade pip
-          pip install buildozer bidi kivy numpy
+          python3 -m pip install --upgrade pip
+          # (확인) 발디(bidi)를 완벽하게 제거하고 순수하게 빌도저, 키비, 넘파이,파이횟불만 딱 설치합니다.
+          pip install buildozer kivy numpy pytorch
 
-      - name: Build with Buildozer (Auto Accept Mode)
+      - name: Build with Buildozer (Safe Auto Mode)
         run: |
           export BUILDOZER_HOME=/tmp/buildozer_cache
-          # (핵심) 예스맨 명령어(yes)를 앞에 붙여서 모든 안드로이드 라이선스 경고를 강제 패스시킵니다.
-          yes | buildozer -v android debug
+          buildozer --accept-sdk-license android debug
         continue-on-error: false
 
       - name: Upload Finished APK
