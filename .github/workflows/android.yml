@@ -20,6 +20,7 @@ jobs:
       - name: Install System Dependencies
         run: |
           sudo apt-get update
+          # 리눅스 시스템 단에 aidl과 필수 호환성 64비트 라이브러리들을 튼튼하게 주입합니다.
           sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libssl-dev cmake python3-dev build-essential gcc g++ ccache libffi-dev libstdc++6 aidl
 
       - name: Install Buildozer Tool
@@ -29,12 +30,11 @@ jobs:
 
       - name: Patch Buildozer Sdkmanager Path Bug
         run: |
-          # [버그 박살 핵심] 빌도저 본체 내부의 안드로이드 소스코드(android.py)를 추적하여,
-          # 옛날 주소인 'tools', 'bin'을 최신 주소인 'cmdline-tools', 'latest', 'bin'으로 강제 치환 수선합니다!
+          # 빌도저가 최신 주소록(cmdline-tools)을 바라보게 만드는 눈알 교정 수술
           sed -r "s/'tools', 'bin'/'cmdline-tools', 'latest', 'bin'/" -i /usr/local/lib/python3.10/dist-packages/buildozer/targets/android.py || true
-          sed -r "s/'tools', 'bin'/'cmdline-tools', 'latest', 'bin'/" -i $HOME/.local/lib/python*/site-packages/buildozer/targets/android.py || true
+          sed -r "s/'tools', 'bin'/'cmdline-tools', 'latest', 'bin'/" -i $HOME/.local/bin/buildozer || true
 
-      - name: Build with Buildozer (Perfect Auto Mode)
+      - name: Build with Buildozer (Absolute License Lock Free)
         env:
           ANDROID_STOREPASS: '"android"'
           ANDROID_KEYPASS: '"android"'
@@ -43,7 +43,14 @@ jobs:
           cd ${{ github.workspace }}
           export PATH=$PATH:$HOME/.local/bin
           
-          # 이제 눈이 멀었던 빌도저가 최신 안드로이드 SDK 주소를 한 번에 알아채고 질주합니다.
+          # [Aidl 차단 해결 핵심] 빌도저가 다운로드를 시작하기 전에, 구글의 모든 정품 인증 라이선스 폴더와 
+          # 자동 동의 암호 확인 도장 파일들을 물리적으로 미리 생성해서 박아버립니다!
+          mkdir -p $HOME/.buildozer/android/platform/android-sdk/licenses
+          echo -e "\n24333f1a69b12ffb2a3d6e60af354557b736de2a" > $HOME/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
+          echo -e "\n84831b9409646a918e30573bab4c9c91346d8abd" > $HOME/.buildozer/android/platform/android-sdk/licenses/android-sdk-preview-license
+          echo -e "\nd56f5187479451eabf01fb74314b50d2e2d4b6ec" > $HOME/.buildozer/android/platform/android-sdk/licenses/android-sdk-sys-img-license
+          
+          # 이제 라이선스 제약이 풀린 빌도저가 안드로이드 도구들을 프리패스로 직통 다운로드합니다!
           buildozer -v android debug
         continue-on-error: false
 
