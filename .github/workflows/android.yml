@@ -22,10 +22,16 @@ jobs:
           python3 -m pip install --upgrade pip
           pip install Cython==0.29.33 buildozer
 
-      - name: Build with Buildozer (PyTorch Embedding Mode)
+      - name: Build with Buildozer (Pure Default Home Mode)
+        env:
+          ANDROID_STOREPASS: '"android"'
+          ANDROID_KEYPASS: '"android"'
+          # 안드로이드 SDK 라이선스는 질문 없이 자동 통과하도록 환경 변수 유지
+          APP_ANDROID_ACCEPT_SDK_LICENSE: 1
         run: |
-          # (핵심) 예스맨 라이선스 자동 동의 옵션 장착
-          buildozer --accept-sdk-license android debug
+          # [유저 요청 반영] export BUILDOZER_HOME 삭제! 
+          # 이제 깃허브 서버의 기본 시스템 경로에서 정석대로 빌드가 진행됩니다.
+          buildozer -v android debug
         continue-on-error: false
 
       - name: Upload Finished PyTorch APK
