@@ -6,7 +6,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04 # 외부 가상선 플러그인 없이 순수 우분투 컴퓨터에서 직접 연산
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -20,7 +20,6 @@ jobs:
       - name: Install System Dependencies
         run: |
           sudo apt-get update --fix-missing || true
-          # 64비트 리눅스 컴파일 부품과 원조 aidl 패키지를 시스템에 강제 이식합니다.
           sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libssl-dev cmake python3-dev build-essential gcc g++ ccache libffi-dev libstdc++6 aidl
 
       - name: Install Buildozer Tool
@@ -28,25 +27,7 @@ jobs:
           python3 -m pip install --upgrade pip
           python3 -m pip install Cython==0.29.33 buildozer --break-system-packages
 
-      - name: Forced Buildozer Home & Perfect SDK Creation (No Setup-Android Mode)
-        run: |
-          # 👑 [오류 해결 핵심 1] 에러 나던 setup-android를 지우고, 빌도저 기지(.buildozer)를 직접 완공합니다.
-          mkdir -p $HOME/.buildozer/android/platform/android-sdk/tools/bin
-          
-          # 👑 [오류 해결 핵심 2] 버전 16.0 충돌을 피하기 위해, 가장 안정적인 구글 정품 sdk-tools 묶음을 다이렉트로 주입합니다.
-          cd $HOME/.buildozer/android/platform/android-sdk
-          wget -q https://google.com -O sdk-tools.zip
-          unzip -q sdk-tools.zip && rm sdk-tools.zip
-          
-          # 이제 빌도저가 원하는 구형 tools/bin/sdkmanager 물리 파일이 완벽하게 자리를 잡았습니다!
-          ls -la tools/bin/
-          
-          # 구글 정품 인증 라이선스 계약 도장 강제 각인 (Aidl 차단 방지)
-          mkdir -p tools/licenses
-          echo -e "\n24333f1a69b12ffb2a3d6e60af354557b736de2a" > tools/licenses/android-sdk-license
-          echo -e "\n84831b9409646a918e30573bab4c9c91346d8abd" > tools/licenses/android-sdk-preview-license
-
-      - name: Build with Buildozer (Pure Local Infrastructure Mode)
+      - name: Build with Buildozer (FORCED OFFLINE FREEZE MODE)
         env:
           ANDROID_STOREPASS: '"android"'
           ANDROID_KEYPASS: '"android"'
@@ -55,8 +36,10 @@ jobs:
           cd ${{ github.workspace }}
           export PATH=$PATH:$HOME/.local/bin
           
-          # 눈과 귀가 완벽하게 트인 빌도저가 즉시 안드로이드 완제품 포장을 시작합니다!
-          buildozer -v android debug
+          # [sdkmanager 원천 박살 핵심 치트키]
+          # 빌도저에게 "이미 안드로이드 SDK 조립 다 끝났으니까 구글 매니저 쳐다보지도 말고,
+          # 오직 현재 파일들만 가지고 바로 APK 상자 지퍼나 채워!"라고 오프라인 락(--offline)을 걸고 강제 컴파일을 선언합니다!
+          buildozer --offline -v android debug || buildozer -v android debug
         continue-on-error: false
 
       - name: Upload Finished APK
