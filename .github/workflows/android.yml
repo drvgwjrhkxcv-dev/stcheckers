@@ -1,44 +1,47 @@
 name: ST Checker APK Auto Packager
 on: [push, workflow_dispatch]
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-22.04
     steps:
-      # 1번 방: 유저님의 main.py와 buildozer.spec 파일을 깃허브 서버로 안전하게 배송 받아옵니다.
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
-      - name: Install System Dependencies
+      - name: Install System Dependencies & Aidl Fixer
         run: |
           sudo apt-get update
-          sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libssl-dev cmake python3-dev build-essential gcc g++ ccache libffi-dev
+          # [Aidl 해결 핵심 1] 리눅스 자체 시스템 단에 컴파일 필수 툴과 aidl 패키지를 강제로 수동 선출시합니다.
+          sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libssl-dev cmake python3-dev build-essential gcc g++ ccache libffi-dev libstdc++6 aidl
 
       - name: Install Buildozer Tool
         run: |
           python3 -m pip install --upgrade pip
-          pip install --user Cython==0.29.33 buildozer Aidl
+          python3 -m pip install Cython==0.29.33 buildozer --break-system-packages
 
-      - name: Build with Buildozer (Absolute Path & License Locked)
+      - name: Build with Buildozer (Aidl License Absolute Pass)
         env:
           ANDROID_STOREPASS: '"android"'
           ANDROID_KEYPASS: '"android"'
           APP_ANDROID_ACCEPT_SDK_LICENSE: 1
         run: |
-          # [Abandon 에러 해결 핵심] 파일들이 모여 있는 진짜 방으로 멱살 잡고 강제 이동!
           cd ${{ github.workspace }}
-          
-          # 숨겨진 빌도저 실행 파일 경로를 시스템에 강제로 주입!
           export PATH=$PATH:$HOME/.local/bin
           
-          # 로봇에게 현재 방에 파일들이 잘 살아 있는지 목록을 눈으로 똑똑히 보여줍니다.
-          ls -la
+          # [Aidl 해결 핵심 2] 빌도저가 SDK를 내려받기 전, 안드로이드 전역 라이선스 계약서에 강제로 도장을 찍어버립니다.
+          mkdir -p ~/.buildozer/android/platform/android-sdk/licenses
+          echo -e "\n24333f1a69b12ffb2a3d6e60af354557b736de2a" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
           
-          # 드디어 정석대로 포장 가동!
+          # 최종 대국 빌드 가동!
           buildozer -v android debug
         continue-on-error: false
 
