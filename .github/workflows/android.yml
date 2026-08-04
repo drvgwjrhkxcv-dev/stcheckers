@@ -30,7 +30,7 @@ jobs:
         run: |
           # [오류 해결 핵심] 깃허브가 파일들을 내려받은 진짜 방(GITHUB_WORKSPACE)으로 
           # 강제로 로그인(cd) 시킨 후 빌도저 포장기를 구동합니다.
-          cd $GITHUB_WORKSPACE
+          cd $.github/workflows
           
           # 현재 방에 main.py와 spec 파일이 진짜 잘 있는지 확인 도장 찍기 (디버깅용)
           ls -la
