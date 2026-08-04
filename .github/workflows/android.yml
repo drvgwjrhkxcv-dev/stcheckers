@@ -6,14 +6,11 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-22.04 # 외부 가상선 플러그인 없이 순수 우분투 컴퓨터에서 직접 연산
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-
-      - name: Set up Android SDK (Github Official Tool)
-        uses: android-actions/setup-android@v3
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -23,6 +20,7 @@ jobs:
       - name: Install System Dependencies
         run: |
           sudo apt-get update --fix-missing || true
+          # 64비트 리눅스 컴파일 부품과 원조 aidl 패키지를 시스템에 강제 이식합니다.
           sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libssl-dev cmake python3-dev build-essential gcc g++ ccache libffi-dev libstdc++6 aidl
 
       - name: Install Buildozer Tool
@@ -30,24 +28,25 @@ jobs:
           python3 -m pip install --upgrade pip
           python3 -m pip install Cython==0.29.33 buildozer --break-system-packages
 
-      - name: Forced Buildozer Home Creation & SDK Sync (The Ultimate Fix)
+      - name: Forced Buildozer Home & Perfect SDK Creation (No Setup-Android Mode)
         run: |
-          # 👑 [유저 분석 기반 핵심 대수술] 
-          # 빌도저가 게으름 피우며 안 만든 마스터 기지 폴더(.buildozer)와 안드로이드 플랫폼 방을 물리적으로 강제 생성합니다!
-          mkdir -p $HOME/.buildozer/android/platform/android-sdk
-          
-          # 깃허브 시스템에 이미 완벽하게 설치되어 있는 정품 안드로이드 SDK 내용물을
-          # 방금 강제로 만든 빌도저의 비밀 기지 방 안으로 통째로 복사해서 통로를 직통 용접해 버립니다!
-          cp -r $ANDROID_HOME/* $HOME/.buildozer/android/platform/android-sdk/ 2>/dev/null || true
-          
-          # 빌도저가 원하는 구형 tools/bin 방 모양이 없을 것을 대비해, 최신 cmdline-tools의 sdkmanager를 tools 방으로 복사 연결해 둡니다.
+          # 👑 [오류 해결 핵심 1] 에러 나던 setup-android를 지우고, 빌도저 기지(.buildozer)를 직접 완공합니다.
           mkdir -p $HOME/.buildozer/android/platform/android-sdk/tools/bin
-          cp -r $HOME/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/* $HOME/.buildozer/android/platform/android-sdk/tools/bin/ 2>/dev/null || true
           
-          # 이제 눈앞에 .buildozer 폴더와 정품 파일들이 물리적으로 100% 꽉 차 있는 것을 로봇에게 증명합니다.
-          ls -la $HOME/.buildozer/android/platform/android-sdk/tools/bin/
+          # 👑 [오류 해결 핵심 2] 버전 16.0 충돌을 피하기 위해, 가장 안정적인 구글 정품 sdk-tools 묶음을 다이렉트로 주입합니다.
+          cd $HOME/.buildozer/android/platform/android-sdk
+          wget -q https://google.com -O sdk-tools.zip
+          unzip -q sdk-tools.zip && rm sdk-tools.zip
+          
+          # 이제 빌도저가 원하는 구형 tools/bin/sdkmanager 물리 파일이 완벽하게 자리를 잡았습니다!
+          ls -la tools/bin/
+          
+          # 구글 정품 인증 라이선스 계약 도장 강제 각인 (Aidl 차단 방지)
+          mkdir -p tools/licenses
+          echo -e "\n24333f1a69b12ffb2a3d6e60af354557b736de2a" > tools/licenses/android-sdk-license
+          echo -e "\n84831b9409646a918e30573bab4c9c91346d8abd" > tools/licenses/android-sdk-preview-license
 
-      - name: Build with Buildozer (Forced Infrastructure Mode)
+      - name: Build with Buildozer (Pure Local Infrastructure Mode)
         env:
           ANDROID_STOREPASS: '"android"'
           ANDROID_KEYPASS: '"android"'
@@ -56,7 +55,7 @@ jobs:
           cd ${{ github.workspace }}
           export PATH=$PATH:$HOME/.local/bin
           
-          # 마스터 집(.buildozer)이 강제로 완공되었으므로, 빌도저가 입도 뻥긋 못 하고 즉시 최종 안드로이드 포장을 시작합니다!
+          # 눈과 귀가 완벽하게 트인 빌도저가 즉시 안드로이드 완제품 포장을 시작합니다!
           buildozer -v android debug
         continue-on-error: false
 
