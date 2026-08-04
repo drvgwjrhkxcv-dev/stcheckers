@@ -1,5 +1,5 @@
 name: ST Checker APK Auto Packager
-on: [push, workflow_dispatch] # 내가 코드를 올리거나 버튼을 누르면 자동 실행
+on: [push, workflow_dispatch]
 
 jobs:
   build:
@@ -20,12 +20,14 @@ jobs:
       - name: Install Buildozer & Core Packages
         run: |
           pip install --upgrade pip
-          pip install buildozer kivy numpy
+          pip install buildozer bidi kivy numpy
 
-      - name: Build with Buildozer
+      - name: Build with Buildozer (Auto Accept Mode)
         run: |
-          # 내 디렉토리에 .buildozer 안 만들고 임시 공간에서만 빌드하도록 세팅
-          buildozer -v android debug
+          export BUILDOZER_HOME=/tmp/buildozer_cache
+          # (핵심) 예스맨 명령어(yes)를 앞에 붙여서 모든 안드로이드 라이선스 경고를 강제 패스시킵니다.
+          yes | buildozer -v android debug
+        continue-on-error: false
 
       - name: Upload Finished APK
         uses: actions/upload-artifact@v4
