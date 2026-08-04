@@ -20,7 +20,7 @@ jobs:
       - name: Install System Dependencies
         run: |
           sudo apt-get update
-          # 리눅스 시스템 단에 aidl과 필수 호환성 64비트 라이브러리들을 튼튼하게 주입합니다.
+          # 리눅스 시스템 단에 컴파일 필수 도구 및 압축 해제기(unzip)를 완벽하게 주입합니다.
           sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libssl-dev cmake python3-dev build-essential gcc g++ ccache libffi-dev libstdc++6 aidl
 
       - name: Install Buildozer Tool
@@ -28,13 +28,26 @@ jobs:
           python3 -m pip install --upgrade pip
           python3 -m pip install Cython==0.29.33 buildozer --break-system-packages
 
-      - name: Patch Buildozer Sdkmanager Path Bug
+      - name: Pre-install Android SDK Tools (The Ultimate Fix)
         run: |
-          # 빌도저가 최신 주소록(cmdline-tools)을 바라보게 만드는 눈알 교정 수술
-          sed -r "s/'tools', 'bin'/'cmdline-tools', 'latest', 'bin'/" -i /usr/local/lib/python3.10/dist-packages/buildozer/targets/android.py || true
-          sed -r "s/'tools', 'bin'/'cmdline-tools', 'latest', 'bin'/" -i $HOME/.local/bin/buildozer || true
+          # [에러 해결 핵심 1] 빌도저가 쳐다보는 바로 그 디렉토리 구조를 미리 창조합니다.
+          mkdir -p $HOME/.buildozer/android/platform/android-sdk
+          cd $HOME/.buildozer/android/platform/android-sdk
+          
+          # [에러 해결 핵심 2] 구글 공식 서버에서 빌도저가 애타게 찾는 구형 'tools' 묶음 패키지를 직접 다운로드합니다.
+          wget -q https://dl.google.com/android/repository/sdk-tools-linux-3859397.zip -O sdk-tools.zip
+          unzip -q sdk-tools.zip
+          rm sdk-tools.zip
+          
+          # 이제 디렉토리에 'tools/bin/sdkmanager' 실제 파일이 완벽하게 들어앉았습니다!
+          ls -la tools/bin/
+          
+          # 구글 정품 인증 라이선스 계약서 도장 미리 찍어두기
+          mkdir -p tools/licenses
+          echo -e "\n24333f1a69b12ffb2a3d6e60af354557b736de2a" > tools/licenses/android-sdk-license
+          echo -e "\n84831b9409646a918e30573bab4c9c91346d8abd" > tools/licenses/android-sdk-preview-license
 
-      - name: Build with Buildozer (Absolute License Lock Free)
+      - name: Build with Buildozer (Pure Master Mode)
         env:
           ANDROID_STOREPASS: '"android"'
           ANDROID_KEYPASS: '"android"'
@@ -43,14 +56,7 @@ jobs:
           cd ${{ github.workspace }}
           export PATH=$PATH:$HOME/.local/bin
           
-          # [Aidl 차단 해결 핵심] 빌도저가 다운로드를 시작하기 전에, 구글의 모든 정품 인증 라이선스 폴더와 
-          # 자동 동의 암호 확인 도장 파일들을 물리적으로 미리 생성해서 박아버립니다!
-          mkdir -p $HOME/.buildozer/android/platform/android-sdk/licenses
-          echo -e "\n24333f1a69b12ffb2a3d6e60af354557b736de2a" > $HOME/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
-          echo -e "\n84831b9409646a918e30573bab4c9c91346d8abd" > $HOME/.buildozer/android/platform/android-sdk/licenses/android-sdk-preview-license
-          echo -e "\nd56f5187479451eabf01fb74314b50d2e2d4b6ec" > $HOME/.buildozer/android/platform/android-sdk/licenses/android-sdk-sys-img-license
-          
-          # 이제 라이선스 제약이 풀린 빌도저가 안드로이드 도구들을 프리패스로 직통 다운로드합니다!
+          # 물리 파일 선조립 덕분에 빌도저가 딴지 걸지 못하고 즉시 안드로이드 포장을 시작합니다!
           buildozer -v android debug
         continue-on-error: false
 
