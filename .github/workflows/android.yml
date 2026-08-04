@@ -1,5 +1,3 @@
-name: ST Checker PyTorch APK Auto Packager
-on: [push, workflow_dispatch]
 
 name: ST Checker APK Auto Packager
 on: [push, workflow_dispatch]
