@@ -25,7 +25,6 @@ jobs:
       - name: Build with Buildozer
         run: |
           # 내 디렉토리에 .buildozer 안 만들고 임시 공간에서만 빌드하도록 세팅
-          export BUILDOZER_HOME=/tmp/buildozer_cache
           buildozer -v android debug
 
       - name: Upload Finished APK
