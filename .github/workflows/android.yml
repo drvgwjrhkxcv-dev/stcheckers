@@ -22,15 +22,19 @@ jobs:
           python3 -m pip install --upgrade pip
           pip install Cython==0.29.33 buildozer
 
-      - name: Build with Buildozer (Pure Default Home Mode)
+      - name: Build with Buildozer (Absolute Root Path Mode)
         env:
           ANDROID_STOREPASS: '"android"'
           ANDROID_KEYPASS: '"android"'
-          # 안드로이드 SDK 라이선스는 질문 없이 자동 통과하도록 환경 변수 유지
           APP_ANDROID_ACCEPT_SDK_LICENSE: 1
         run: |
-          # [유저 요청 반영] export BUILDOZER_HOME 삭제! 
-          # 이제 깃허브 서버의 기본 시스템 경로에서 정석대로 빌드가 진행됩니다.
+          # [오류 해결 핵심] 깃허브가 파일들을 내려받은 진짜 방(GITHUB_WORKSPACE)으로 
+          # 강제로 로그인(cd) 시킨 후 빌도저 포장기를 구동합니다.
+          cd $GITHUB_WORKSPACE
+          
+          # 현재 방에 main.py와 spec 파일이 진짜 잘 있는지 확인 도장 찍기 (디버깅용)
+          ls -la
+          
           buildozer -v android debug
         continue-on-error: false
 
