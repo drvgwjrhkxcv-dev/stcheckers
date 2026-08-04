@@ -24,7 +24,6 @@ jobs:
 
       - name: Build with Buildozer (PyTorch Embedding Mode)
         run: |
-          export BUILDOZER_HOME=/tmp/buildozer_cache
           # (핵심) 예스맨 라이선스 자동 동의 옵션 장착
           buildozer --accept-sdk-license android debug
         continue-on-error: false
