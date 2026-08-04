@@ -17,7 +17,7 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install System Dependencies & Aidl/Sdk Fixer
+      - name: Install System Dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libssl-dev cmake python3-dev build-essential gcc g++ ccache libffi-dev libstdc++6 aidl
@@ -27,7 +27,14 @@ jobs:
           python3 -m pip install --upgrade pip
           python3 -m pip install Cython==0.29.33 buildozer --break-system-packages
 
-      - name: Build with Buildozer (Sdkmanager Location Locked)
+      - name: Patch Buildozer Sdkmanager Path Bug
+        run: |
+          # [버그 박살 핵심] 빌도저 본체 내부의 안드로이드 소스코드(android.py)를 추적하여,
+          # 옛날 주소인 'tools', 'bin'을 최신 주소인 'cmdline-tools', 'latest', 'bin'으로 강제 치환 수선합니다!
+          sed -r "s/'tools', 'bin'/'cmdline-tools', 'latest', 'bin'/" -i /usr/local/lib/python3.10/dist-packages/buildozer/targets/android.py || true
+          sed -r "s/'tools', 'bin'/'cmdline-tools', 'latest', 'bin'/" -i $HOME/.local/lib/python*/site-packages/buildozer/targets/android.py || true
+
+      - name: Build with Buildozer (Perfect Auto Mode)
         env:
           ANDROID_STOREPASS: '"android"'
           ANDROID_KEYPASS: '"android"'
@@ -36,25 +43,7 @@ jobs:
           cd ${{ github.workspace }}
           export PATH=$PATH:$HOME/.local/bin
           
-          # [해결책 핵심 1] 빌도저가 먼저 기본 SDK 베이스 방을 구축하도록 강제 유도
-          buildozer android status || true
-          
-          # [해결책 핵심 2] 구글의 이사 간 최신 커맨드라인 툴들을 수동으로 다운로드하여 구버전 tools/bin 방 모양으로 똑같이 조각해 줍니다.
-          mkdir -p ~/.buildozer/android/platform/android-sdk/tools/bin
-          cd ~/.buildozer/android/platform/android-sdk
-          wget https://google.com -O cmdline.zip
-          unzip -q cmdline.zip && rm cmdline.zip
-          
-          # 새 방에 있던 sdkmanager 부품들을 빌도저가 쳐다보는 tools/bin 방으로 강제 복사 배송합니다.
-          cp -r cmdline-tools/* tools/ 2>/dev/null || true
-          cp cmdline-tools/bin/* tools/bin/ 2>/dev/null || true
-          
-          # 안드로이드 정품 인증 라이선스 계약 도장 찍기
-          mkdir -p tools/licenses
-          echo -e "\n24333f1a69b12ffb2a3d6e60af354557b736de2a" > tools/licenses/android-sdk-license
-          
-          # 원래 프로젝트 방으로 복귀 후 대국 최종 빌드 가동!
-          cd ${{ github.workspace }}
+          # 이제 눈이 멀었던 빌도저가 최신 안드로이드 SDK 주소를 한 번에 알아채고 질주합니다.
           buildozer -v android debug
         continue-on-error: false
 
