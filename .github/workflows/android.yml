@@ -1,4 +1,4 @@
-name: ST Checker APK Auto Packager
+name: ST Checker PyTorch APK Auto Packager
 on: [push, workflow_dispatch]
 
 jobs:
@@ -17,20 +17,20 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libssl-dev cmake python3-dev build-essential gcc g++ ccache libffi-dev
 
-      - name: Install Buildozer & Core Packages
+      - name: Install Pure Build Tools
         run: |
           python3 -m pip install --upgrade pip
-          # (확인) 발디(bidi)를 완벽하게 제거하고 순수하게 빌도저, 키비, 넘파이,파이횟불만 딱 설치합니다.
-          pip install buildozer kivy numpy pytorch
+          pip install Cython==0.29.33 buildozer
 
-      - name: Build with Buildozer (Safe Auto Mode)
+      - name: Build with Buildozer (PyTorch Embedding Mode)
         run: |
           export BUILDOZER_HOME=/tmp/buildozer_cache
+          # (핵심) 예스맨 라이선스 자동 동의 옵션 장착
           buildozer --accept-sdk-license android debug
         continue-on-error: false
 
-      - name: Upload Finished APK
+      - name: Upload Finished PyTorch APK
         uses: actions/upload-artifact@v4
         with:
-          name: ST_Checker_Game_APK
+          name: ST_Checker_Real_PyTorch_APK
           path: bin/*.apk
