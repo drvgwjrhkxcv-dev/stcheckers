@@ -17,10 +17,9 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install System Dependencies & Aidl Fixer
+      - name: Install System Dependencies & Aidl/Sdk Fixer
         run: |
           sudo apt-get update
-          # [Aidl 해결 핵심 1] 리눅스 자체 시스템 단에 컴파일 필수 툴과 aidl 패키지를 강제로 수동 선출시합니다.
           sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libssl-dev cmake python3-dev build-essential gcc g++ ccache libffi-dev libstdc++6 aidl
 
       - name: Install Buildozer Tool
@@ -28,7 +27,7 @@ jobs:
           python3 -m pip install --upgrade pip
           python3 -m pip install Cython==0.29.33 buildozer --break-system-packages
 
-      - name: Build with Buildozer (Aidl License Absolute Pass)
+      - name: Build with Buildozer (Sdkmanager Location Locked)
         env:
           ANDROID_STOREPASS: '"android"'
           ANDROID_KEYPASS: '"android"'
@@ -37,11 +36,25 @@ jobs:
           cd ${{ github.workspace }}
           export PATH=$PATH:$HOME/.local/bin
           
-          # [Aidl 해결 핵심 2] 빌도저가 SDK를 내려받기 전, 안드로이드 전역 라이선스 계약서에 강제로 도장을 찍어버립니다.
-          mkdir -p ~/.buildozer/android/platform/android-sdk/licenses
-          echo -e "\n24333f1a69b12ffb2a3d6e60af354557b736de2a" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
+          # [해결책 핵심 1] 빌도저가 먼저 기본 SDK 베이스 방을 구축하도록 강제 유도
+          buildozer android status || true
           
-          # 최종 대국 빌드 가동!
+          # [해결책 핵심 2] 구글의 이사 간 최신 커맨드라인 툴들을 수동으로 다운로드하여 구버전 tools/bin 방 모양으로 똑같이 조각해 줍니다.
+          mkdir -p ~/.buildozer/android/platform/android-sdk/tools/bin
+          cd ~/.buildozer/android/platform/android-sdk
+          wget https://google.com -O cmdline.zip
+          unzip -q cmdline.zip && rm cmdline.zip
+          
+          # 새 방에 있던 sdkmanager 부품들을 빌도저가 쳐다보는 tools/bin 방으로 강제 복사 배송합니다.
+          cp -r cmdline-tools/* tools/ 2>/dev/null || true
+          cp cmdline-tools/bin/* tools/bin/ 2>/dev/null || true
+          
+          # 안드로이드 정품 인증 라이선스 계약 도장 찍기
+          mkdir -p tools/licenses
+          echo -e "\n24333f1a69b12ffb2a3d6e60af354557b736de2a" > tools/licenses/android-sdk-license
+          
+          # 원래 프로젝트 방으로 복귀 후 대국 최종 빌드 가동!
+          cd ${{ github.workspace }}
           buildozer -v android debug
         continue-on-error: false
 
