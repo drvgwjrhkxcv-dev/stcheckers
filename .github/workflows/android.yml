@@ -51,7 +51,7 @@ jobs:
     - name: Install Buildozer and Cython
       run: |
         pip3 install --upgrade pip
-        pip3 install buildozer cython numpy pytorch 
+        pip3 install buildozer cython numpy torch
 
     # 5. 빌도저로 안드로이드 APK 빌드
     - name: Build with Buildozer
