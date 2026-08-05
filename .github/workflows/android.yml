@@ -1,66 +1,48 @@
-name: Buildozer Auto Packager
+name: Build 『ST체커』 Android APK
 
 on:
   push:
-    branches: [ "main" ] # main 브랜치에 푸시될 때 실행 (원하는 브랜치로 변경 가능)
+    branches: [ "main" ]  # main 브랜치에 코드가 push되면 자동으로 빌드 시작
   pull_request:
     branches: [ "main" ]
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-22.04  # Buildozer 호환성이 가장 안정적인 우분투 버전 지정
 
     steps:
-    # 1. 깃허브 저장소의 코드 가져오기
-    - name: Checkout code
+    # 1. 깃허브 저장소의 파이썬 소스코드를 서버로 가져옴
+    - name: Checkout repository코드 가져오기
       uses: actions/checkout@v4
 
-    # 2. 빌도저 캐시 설정 (빌드 속도 향상)
-    - name: Get Date
-      id: get-date
-      run: |
-        echo "date=$(date -u +'%Y%m%d')" >> $GITHUB_OUTPUT
-
-    - name: Cache Buildozer apps
-      uses: actions/cache@v4
+    # 2. 파이썬 환경 설정
+    - name: Set up Python 환경 가동
+      uses: actions/setup-python@v5
       with:
-        path: .buildozer
-        key: ${{ runner.os }}-buildozer-${{ steps.get-date.outputs.date }}
-        restore-keys: |
-          ${{ runner.os }}-buildozer-
+        python-version: '3.10'
 
-    # 3. 빌도저 필수 의존성 패키지 설치
-    - name: Install dependencies
+    # 3. 우분투 서버에 안드로이드 APK 빌드 필수 도구들 설치
+    - name: Install system dependencies 필수 패키지 설치
       run: |
         sudo apt-get update
-        sudo apt-get install -y --no-install-recommends \
-          build-essential \
-          ccache \
-          git \
-          libffi-dev \
-          libssl-dev \
-          openjdk-17-jdk \
-          python3-pip \
-          python3-setuptools \
-          python3-venv \
-          unzip \
-          zip \
-          zlib1g-dev
+        sudo apt-get install -y ccache git libncurses5:i386 libstdc++6:i386 libgtk2.0-0:i386 libpangox-1.0-0:i386 libpangoxft-1.0-0:i386 libidn12:i386
+        sudo apt-get install -y zip unzip openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev libsqlite3-dev tk-dev uuid-dev lzma-dev liblzma-dev
 
-    # 4. 파이썬 및 빌도저 설치
-    - name: Install Buildozer and Cython
+    # 4. 파이썬 Buildozer 및 Cython 설치 (앱 패키징용)
+    - name: Install Buildozer 및 Cython 패키징 도구 설치
       run: |
-        pip3 install --upgrade pip
-        pip3 install buildozer cython numpy torch
+        pip install --upgrade pip
+        pip install buildozer cython virtualenv
 
-    # 5. 빌도저로 안드로이드 APK 빌드
-    - name: Build with Buildozer
+    # 5. Buildozer를 실행하여 ST체커 규칙 엔진과 딥러닝 AI가 포함된 APK 빌드
+    - name: Build with Buildozer APK 자동 추출 진행
       run: |
-        yes | buildozer -v android debug
+        # 구글 보안 정책 및 라이선스 동의 자동 패스 처리 후 빌드
+        yes | buildozer android debug
 
-    # 6. 빌드된 APK 파일을 깃허브에 업로드 (다운로드 가능하도록)
-    - name: Upload Artifact
+    # 6. 빌드가 완료된 .apk 파일을 사용자가 다운로드할 수 있도록 깃허브에 업로드
+    - name: Upload APK Artifact 완성된 파일 저장 및 내보내기
       uses: actions/upload-artifact@v4
       with:
-        name: android-apk
-        path: bin/*.apk
+        name: ST-Checker-Game-APK
+        path: bin/*.apk  # 빌드 성공 시 파일이 저장되는 위치
