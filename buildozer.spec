@@ -8,11 +8,11 @@
 
 title = ST Checker AI
 package.name = stchecker
-package.domain = com.stchecker.game# (str) Source code where the main.py live
+package.domain = com.stchecker.game # (str) Source code where the main.py live
 source.dir = .
 
 # (list) Source files to include (leave empty to include all the files)
-source.include_exts = py,png,jpg,kv,atlas,pth
+source.include_exts = py,png,jpg,kv,atlas,onnx
 # (list) List of inclusions using pattern matching
 #source.include_patterns = assets/*,images/*.png
 
