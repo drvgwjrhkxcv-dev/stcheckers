@@ -2,47 +2,46 @@ name: Build 『ST체커』 Android APK
 
 on:
   push:
-    branches: [ "main" ]  # main 브랜치에 코드가 push되면 자동으로 빌드 시작
+    branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
 
 jobs:
   build:
-    runs-on: ubuntu-22.04  # Buildozer 호환성이 가장 안정적인 우분투 버전 지정
+    runs-on: ubuntu-22.04
 
     steps:
-    # 1. 깃허브 저장소의 파이썬 소스코드를 서버로 가져옴
-    - name: Checkout repository코드 가져오기
+    # 1. 저장소 코드 체크아웃
+    - name: Checkout repository
       uses: actions/checkout@v4
 
-    # 2. 파이썬 환경 설정
-    - name: Set up Python 환경 가동
+    # 2. 파이썬 환경 설정 (Buildozer와 호환성이 가장 좋은 3.10 버전)
+    - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.10'
 
-    # 3. 우분투 서버에 안드로이드 APK 빌드 필수 도구들 설치
-    - name: Install system dependencies 필수 패키지 설치
+    # 3. 우분투 64비트 최신 환경에 맞춘 필수 패키지 설치 (i386 에러 원천 차단)
+    - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y ccache git libncurses5:i386 libstdc++6:i386 libgtk2.0-0:i386 libpangox-1.0-0:i386 libpangoxft-1.0-0:i386 libidn12:i386
-        sudo apt-get install -y zip unzip openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev libsqlite3-dev tk-dev uuid-dev lzma-dev liblzma-dev
+        sudo apt-get install -y git zip unzip openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev libsqlite3-dev tk-dev uuid-dev lzma-dev liblzma-dev
 
-    # 4. 파이썬 Buildozer 및 Cython 설치 (앱 패키징용)
-    - name: Install Buildozer 및 Cython 패키징 도구 설치
+    # 4. 패키징 도구 설치
+    - name: Install Buildozer and Cython
       run: |
         pip install --upgrade pip
-        pip install buildozer cython virtualenv
+        pip install buildozer cython==0.29.36 virtualenv
 
-    # 5. Buildozer를 실행하여 ST체커 규칙 엔진과 딥러닝 AI가 포함된 APK 빌드
-    - name: Build with Buildozer APK 자동 추출 진행
+    # 5. Buildozer 빌드 실행 (ST체커 규칙 엔진 및 AI 탑재)
+    - name: Build with Buildozer
       run: |
-        # 구글 보안 정책 및 라이선스 동의 자동 패스 처리 후 빌드
+        # 구글 SDK 라이선스 자동 동의 및 빌드 진행
         yes | buildozer android debug
 
-    # 6. 빌드가 완료된 .apk 파일을 사용자가 다운로드할 수 있도록 깃허브에 업로드
-    - name: Upload APK Artifact 완성된 파일 저장 및 내보내기
+    # 6. 생성된 APK 파일 업로드
+    - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
         name: ST-Checker-Game-APK
-        path: bin/*.apk  # 빌드 성공 시 파일이 저장되는 위치
+        path: bin/*.apk
