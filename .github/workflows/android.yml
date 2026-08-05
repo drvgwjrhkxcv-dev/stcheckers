@@ -45,7 +45,7 @@ jobs:
     - name: Install Buildozer and Cython
       run: |
         pip install --upgrade pip
-        pip install buildozer cython==0.29.36 virtualenv
+        pip install buildozer cython==0.29.36 virtualenv torch
 
     # 6. APK 빌드 실행 (캐시가 있으면 이미 다운로드된 SDK를 사용하여 초고속 빌드)
     - name: Build with Buildozer
